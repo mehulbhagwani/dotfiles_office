@@ -1,112 +1,169 @@
-// fm-quota-footer.ts - custom Pi footer: project · model · effort | ctx% | 5h% | 7d%
-//
-// Reads provider quota from the local `quota-axi --json` tool (cached 60s).
-// The provider shown matches the active model's provider prefix; falls back
-// to the first provider that reports quota windows.
-//
-// The agy (Antigravity) provider is excluded: quota-axi probes it by spawning
-// `agy -p /quota`, and a signed-out agy answers every probe by opening an
-// interactive OAuth tab in the default browser - one spam tab per pane per
-// refresh. --no-credential-refresh keeps this passive footer read-only for
-// the providers that support delegated credential renewal.
-
+// Compact, theme-aware footer. Quota reads are passive and active-provider-only.
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { execFile } from "node:child_process";
+import { execFile, type ChildProcess } from "node:child_process";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import path from "node:path";
 
-const QUOTA_CACHE_MS = 60_000;
-// Every quota-axi provider except agy (see header). Keep in sync with
-// `quota-axi --help`'s provider list when quota-axi adds providers.
-const QUOTA_PROVIDERS =
-  "claude,codex,cursor,copilot,grok,kimi,zai,alibaba,opencode-go,commandcode,minimax,mimo,deepseek,openrouter,elevenlabs";
-let quotaCache: { at: number; data: unknown } | null = null;
+const REFRESH_MS = 60_000;
+const PROVIDERS = new Set([
+  "claude", "codex", "cursor", "copilot", "grok", "kimi", "zai", "alibaba",
+  "opencode-go", "commandcode", "minimax", "mimo", "deepseek", "openrouter",
+  "elevenlabs", "devin", "muse", "higgsfield",
+]);
+// Never probe agy: a signed-out CLI may open an interactive OAuth browser tab.
+const ALIASES: Record<string, string> = { anthropic: "claude", "openai-codex": "codex" };
 
-interface Window {
+interface QuotaWindow {
   id: string;
+  label?: string;
   percentRemaining?: number;
+  resetsAt?: string;
+}
+interface QuotaProvider {
+  provider: string;
+  windows?: QuotaWindow[];
+  state?: { status?: string; stale?: boolean };
 }
 
-function refreshQuota(): void {
-  const now = Date.now();
-  if (quotaCache && now - quotaCache.at < QUOTA_CACHE_MS) return;
-  quotaCache = { at: now, data: quotaCache?.data ?? null };
-  execFile(
-    "quota-axi",
-    ["--json", "--no-credential-refresh", "--provider", QUOTA_PROVIDERS],
-    { timeout: 10_000 },
-    (err, stdout) => {
-      if (err) return;
-      try {
-        quotaCache = { at: Date.now(), data: JSON.parse(stdout) };
-      } catch {
-        // keep previous cache
-      }
-    },
-  );
-}
-
-function windowsFor(modelId: string): Window[] | null {
-  const data = quotaCache?.data as {
-    providers?: { provider: string; windows?: Window[] }[];
-  } | null;
-  if (!data?.providers) return null;
-  const want = modelId.split("/")[0];
-  const match =
-    data.providers.find((p) => p.provider === want && p.windows?.length) ||
-    data.providers.find((p) => p.windows?.length);
-  return match?.windows ?? null;
-}
-
-function pct(windows: Window[] | null, id: string): string {
-  const w = windows?.find((x) => x.id === id);
-  return w && typeof w.percentRemaining === "number" ? `${w.percentRemaining}%` : "-";
+function resetLabel(at: string | undefined): string {
+  const ms = Date.parse(at ?? "") - Date.now();
+  if (!Number.isFinite(ms) || ms <= 0) return "";
+  const minutes = Math.ceil(ms / 60_000);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.ceil(minutes / 60);
+  return hours < 48 ? `${hours}h` : `${Math.ceil(hours / 24)}d`;
 }
 
 export default function (pi: ExtensionAPI) {
+  let stop = () => {};
+  let refresh = () => {};
+  pi.on("session_shutdown", () => stop());
+  pi.on("model_select", () => refresh());
   pi.on("session_start", (_event, ctx) => {
-    refreshQuota();
-    let tuiRef: { requestRender: () => void } | null = null;
-    const timer = setInterval(() => {
-      refreshQuota();
-      tuiRef?.requestRender();
-    }, QUOTA_CACHE_MS);
+    stop();
+    if (ctx.mode !== "tui") return;
 
-    ctx.ui.setFooter((tui, theme) => {
-      tuiRef = tui;
-      const render = (width: number): string[] => {
-        refreshQuota();
-        const dir = path.basename(ctx.cwd) || ctx.cwd;
-        const model = ctx.model?.id || "no-model";
-        const effort = process.env.PI_REASONING_LEVEL || "";
+    let disposed = false;
+    let child: ChildProcess | undefined;
+    let provider: string | undefined;
+    let quota: QuotaProvider | undefined;
+    let fetchedAt = 0;
+    let unavailable = false;
+    let requestRender = () => {};
+    let unsubscribe = () => {};
 
-        const usage = ctx.getContextUsage?.();
-        const win =
-          (ctx.model as { context_window?: number } | undefined)?.context_window ?? 0;
-        const ctxPct =
-          usage && win > 0
-            ? `${Math.min(100, Math.round((usage.tokens / win) * 100))}%`
-            : "-";
+    refresh = () => {
+      if (disposed) return;
+      const active = ctx.model?.provider ?? "";
+      const next = ALIASES[active] ?? active;
+      if (next !== provider) {
+        child?.kill();
+        child = undefined;
+        provider = next;
+        quota = undefined;
+        fetchedAt = 0;
+        unavailable = false;
+      }
+      if (!PROVIDERS.has(next) || child || Date.now() - fetchedAt < REFRESH_MS) {
+        requestRender();
+        return;
+      }
+      fetchedAt = Date.now();
+      const running = execFile("quota-axi", [
+        "--json", "--no-credential-refresh", "--provider", next, "--max-age", "1m",
+      ], { timeout: 10_000 }, (error, stdout) => {
+        if (disposed || provider !== next || child !== running) return;
+        child = undefined;
+        quota = undefined;
+        unavailable = true;
+        if (!error) {
+          try {
+            const data = JSON.parse(stdout) as { providers?: QuotaProvider[] };
+            if (Array.isArray(data.providers)) {
+              quota = data.providers.find(p => p.provider === next);
+              unavailable = !quota;
+            }
+          } catch {
+            // Failed reads must not keep presenting old percentages as fresh.
+          }
+        }
+        requestRender();
+      });
+      child = running;
+    };
+    const timer = setInterval(() => refresh(), REFRESH_MS);
+    timer.unref();
+    stop = () => {
+      if (disposed) return;
+      disposed = true;
+      clearInterval(timer);
+      child?.kill();
+      child = undefined;
+      unsubscribe();
+    };
 
-        const windows = windowsFor(model);
-        const right = theme.fg(
-          "dim",
-          `ctx ${ctxPct} · 5h ${pct(windows, "five_hour")} · 7d ${pct(windows, "weekly")}`,
-        );
-        const left = theme.fg(
-          "accent",
-          `${dir} · ${model.split("/").pop()}${effort ? ` · ${effort}` : ""}`,
-        );
-        const pad = " ".repeat(Math.max(1, width - visibleWidth(left) - visibleWidth(right)));
-        return [truncateToWidth(left + pad + right, width)];
-      };
+    ctx.ui.setFooter((tui, theme, footerData) => {
+      requestRender = () => tui.requestRender();
+      unsubscribe = footerData.onBranchChange(requestRender);
       return {
         invalidate() {},
-        render,
-        dispose() {
-          clearInterval(timer);
+        dispose: stop,
+        render(width: number): string[] {
+          if (width <= 0) return [""];
+          const dir = path.basename(ctx.cwd) || ctx.cwd;
+          const branch = footerData.getGitBranch();
+          const effort = pi.getThinkingLevel();
+          const model = ctx.model?.id ?? "no-model";
+          const left = theme.fg("accent", `${dir}${branch ? ` (${branch})` : ""} · ${model} · ${effort}`);
+          const percent = ctx.getContextUsage()?.percent;
+          const context = theme.fg(
+            percent != null && percent >= 85 ? "error" : percent != null && percent >= 65 ? "warning" : "dim",
+            `ctx ${percent != null && Number.isFinite(percent) ? `${Math.round(percent)}%` : "?"}`,
+          );
+          const active = ctx.model?.provider ?? "";
+          const matches = provider === (ALIASES[active] ?? active);
+          let quotaText = "";
+          let compactQuota = "";
+          if (matches && PROVIDERS.has(provider ?? "")) {
+            const state = quota?.state;
+            if (unavailable) {
+              quotaText = theme.fg("dim", "quota unavailable");
+            } else if (quota && (state?.stale || state?.status !== "fresh" || Date.now() - fetchedAt > REFRESH_MS * 2)) {
+              quotaText = theme.fg("warning", "quota stale");
+            } else if (quota) {
+              const windows = Array.isArray(quota.windows) ? quota.windows : [];
+              const parts: string[] = [];
+              const short: string[] = [];
+              for (const window of windows) {
+                const remaining = window.percentRemaining;
+                if (typeof remaining !== "number" || !Number.isFinite(remaining)) continue;
+                const label = window.id === "five_hour" ? "5h" : window.id === "weekly" ? "week" : window.label ?? window.id;
+                const text = `${label} ${Math.round(Math.max(0, Math.min(100, remaining)))}% left`;
+                const color = remaining <= 10 ? "error" : remaining <= 25 ? "warning" : "dim";
+                const reset = resetLabel(window.resetsAt);
+                short.push(theme.fg(color, text));
+                parts.push(theme.fg(color, `${text}${reset ? ` (reset ${reset})` : ""}`));
+              }
+              quotaText = parts.join(" · ");
+              compactQuota = short.join(" · ");
+            }
+          }
+          let right = context + (quotaText ? ` · ${quotaText}` : "");
+          // Drop reset details, then quota before sacrificing context or overflowing.
+          if (visibleWidth(right) > width / 2 && compactQuota) right = `${context} · ${compactQuota}`;
+          if (visibleWidth(right) >= width - 8) right = context;
+          const leftWidth = Math.max(0, width - visibleWidth(right) - 1);
+          const clippedLeft = truncateToWidth(left, leftWidth);
+          const line = leftWidth > 0
+            ? clippedLeft + " ".repeat(Math.max(1, width - visibleWidth(clippedLeft) - visibleWidth(right))) + right
+            : right;
+          const lines = [truncateToWidth(line, width)];
+          const statuses = [...footerData.getExtensionStatuses().values()].filter(Boolean);
+          if (statuses.length) lines.push(truncateToWidth(statuses.join(" · "), width));
+          return lines;
         },
       };
     });
+    refresh();
   });
 }

@@ -153,6 +153,12 @@ brew install --cask kunchenguid/tap/pi-launcher
 
 Home Manager owns exactly two repository-authored Pi directories: `~/.pi/agent/themes` and `~/.pi/agent/extensions`. It also links `models.json` and `settings.json` as individual files. The local extension directory is for public, repository-authored extensions only - third-party package code never belongs there. Run `/reload` after editing a local extension or other Pi resources. The terminal-title extension shows a spinner while Pi is working, then a completion mark with the session name or current directory. The `rose-pine-moon` theme was authored clean-room from the public [Rosé Pine Moon palette](https://rosepinetheme.com/palette) and Pi's [public theme schema](https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json), not from a private or live theme file.
 
+### Pi status footer
+
+`home/.pi/agent/extensions/fm-quota-footer.ts` shows the project, Git branch, live model and reasoning level, context usage, and available quota windows for the active provider. Quota is explicitly labeled as remaining, with reset countdowns when space allows. Narrow terminals drop reset details before quota, preserving context visibility. Other extension statuses appear on a second line only when present.
+
+Quota reads use the optional `quota-axi` CLI, at most once a minute, with credential refresh disabled. Unsupported providers never borrow another provider's quota; failed or stale reads are labeled instead of presented as fresh capacity. Antigravity is never probed because its CLI may launch interactive sign-in. Run `/reload` to apply changes. Regression tests: `node --test tests/pi-footer.test.mjs` (uses the installed Pi; set `PI_FOOTER_TEST_PACKAGE_DIR` for a nonstandard installation).
+
 ### Pi Calm
 
 `home/.pi/agent/extensions/calm` is a standalone local Pi extension. Home Manager's existing global extensions-directory link makes Pi auto-load it without another declaration. `/calm` toggles a conversation-only presentation mode and is off by default. Its choice is stored locally in `~/.pi/agent/calm` (or the directory selected by `PI_CODING_AGENT_DIR`), not in this repository or Home Manager. Adapted from Firstmate under the bundled MIT license, Calm imports no Firstmate modules and has no Firstmate runtime dependency.

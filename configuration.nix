@@ -77,6 +77,7 @@
       "ghostty"
       "hyperwhisper"
       "localsend"
+      "openlogi"
       "orbstack"
       "visual-studio-code"
       "wezterm"
