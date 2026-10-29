@@ -1,0 +1,13 @@
+agent
+agy.disabled-by-kimi
+ai-memory
+cursor-agent
+graphify
+graphify-mcp
+impeccable
+impeccable-bin
+kimi
+python3.11
+python3.12
+ruff
+treehouse

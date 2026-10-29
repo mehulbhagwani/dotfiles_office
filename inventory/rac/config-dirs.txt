@@ -1,0 +1,10 @@
+atuin
+fish
+fontconfig
+gh
+herdr
+nvim
+opencode
+openlogi
+starship.toml
+wezterm

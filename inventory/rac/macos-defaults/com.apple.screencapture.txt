@@ -1,0 +1,6 @@
+last-analytics-stamp = 814441412.426452
+last-selection-display = 0
+style = 'window'
+target-screenrecording = 'file'
+target-screenshot = 'file'
+video = True

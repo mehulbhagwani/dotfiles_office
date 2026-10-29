@@ -1,0 +1,5 @@
+com.adobe.GC.Invoker-1.0.plist
+com.kunchenguid.no-mistakes.daemon.3a8d23e6.plist
+com.m87.daemon.dc0a68dc36.plist
+com.pitchperfekt.soundtrigger.plist
+com.synology.SynologyDrive.plist

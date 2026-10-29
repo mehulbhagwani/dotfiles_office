@@ -5,7 +5,8 @@ One repo, one command, and a fresh Mac ends up configured the same way every tim
 
 ## Contributing / Using This Repo
 
-These are my personal dotfiles, shared publicly so people can read them, learn from them, and fork them freely.
+These are my office Mac dotfiles, shared publicly so people can read them, learn from them, and fork them freely.
+They started from [kunchenguid/dotfiles](https://github.com/kunchenguid/dotfiles).
 Feature requests and pull requests are not accepted here, and PRs are auto-closed.
 If you find a bug, please open a GitHub Issue using the bug report template.
 
@@ -33,8 +34,8 @@ Running the switch builds:
 On a brand new Mac, from a bare clone of this repo:
 
 ```sh
-git clone https://github.com/mehulbhagwani/dotfiles.git
-cd dotfiles
+git clone https://github.com/mehulbhagwani/dotfiles_office.git ~/dotfiles
+cd ~/dotfiles
 ```
 
 Before you run it: review "Make it yours" below.
@@ -62,10 +63,10 @@ Once Nix is installed (`bootstrap.sh` step 1 handles that), you can check that t
 
 ```sh
 nix flake check --no-build
-nix build .#darwinConfigurations.rac.system --dry-run
+nix build .#darwinConfigurations."$(scripts/pick-host.sh)".system --dry-run
 ```
 
-On Mehul-Mac, substitute `mehul-mac` for `rac`.
+`scripts/pick-host.sh` prints which `hosts.nix` entry this Mac is.
 
 ## Daily use
 
@@ -83,12 +84,12 @@ No separate build-and-copy step.
 This repo is mine.
 If you clone it, review these before you run `bootstrap.sh`:
 
-- **Which Mac**: `hosts.nix` names two machines.
-  `rac` is the office MacBook Pro (macOS user `rac`).
-  `mehul-mac` is the personal Mac (macOS user `mehul`, Computer Name Mehul-Mac).
-  `./rebuild.sh` and `./bootstrap.sh` pick from the logged-in user and Computer Name.
-  Pass the name if detection is wrong: `./rebuild.sh rac` or `./rebuild.sh mehul-mac`.
-  If Mehul-Mac's short username is not `mehul`, change only that `user` in `hosts.nix`.
+- **Which Mac**: `hosts.nix` is the only file that names a machine.
+  Each entry's name is the flake host, `user` is the macOS short name, `computerName` is matched against the Mac's Computer Name, and `extraCasks` are apps for that Mac only.
+  `rac` is the office Mac (macOS user `rac`); `mehul-mac` is the personal Mac (macOS user `mehul`).
+  To set up a new or renamed Mac, rename or add its entry in `hosts.nix`; `./rebuild.sh` and `./bootstrap.sh` read the list from there.
+  Detection matches the logged-in user first, then the Computer Name. Pass the host if detection is wrong: `./rebuild.sh <host>`.
+  A Mac that matches nothing is added automatically: `./bootstrap.sh` asks only for its host name (Enter keeps the suggestion from the Computer Name) and fills in the user and Computer Name itself. Commit the new `hosts.nix` entry afterwards.
 - **CPU architecture**, `hostPlatform` in `configuration.nix` (see Prerequisites above).
 
 **Git identity:** this config deliberately does not set your git name or email.
@@ -124,11 +125,14 @@ If you don't use it, just remove it from `brews` in your copy.
 ## Repo tour
 
 - `flake.nix` - the entry point.
-  Wires up nixpkgs, nix-darwin, home-manager, and nix-homebrew, and declares the `mac` machine.
+  Wires up nixpkgs, nix-darwin, home-manager, and nix-homebrew, and declares one machine per `hosts.nix` entry.
+- `hosts.nix` - the Macs this repo configures, with their user, Computer Name and per-Mac apps.
 - `configuration.nix` - system-level config: macOS defaults, Homebrew.
 - `home.nix` - user-level config: shell, packages, prompt, and the symlinks described below.
 - `rebuild.sh` - re-applies the config after the first switch.
   Run this every time you make a change.
+- `scripts/pick-host.sh` - works out which `hosts.nix` entry this Mac is.
+- `inventory/rac/` - a snapshot of the office laptop's apps, tools, symlinks and macOS settings, taken before it was replaced.
 - `home/` - the actual config files that get symlinked into place; the sections below explain the shared symlink model and Pi's narrower selective setup.
 
 ## How the symlinks work

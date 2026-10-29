@@ -1,0 +1,7 @@
+~/.dotfiles -> /Users/rac/dotfiles
+~/.nix-defexpr/channels -> /Users/rac/.local/state/nix/profiles/channels
+~/.nix-defexpr/channels_root -> /nix/var/nix/profiles/per-user/root/channels
+~/.nix-profile -> /Users/rac/.local/state/nix/profiles/profile
+~/SynologyDrive/CREATIVE -> /Users/rac/Library/CloudStorage/SynologyDrive-CREATIVE
+~/SynologyDrive/PROJECTS -> /Users/rac/Library/CloudStorage/SynologyDrive-PROJECTS
+~/SynologyDrive/TECH -> /Users/rac/Library/CloudStorage/SynologyDrive-TECH

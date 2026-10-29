@@ -1,0 +1,3 @@
+ShowAMPM = True
+ShowDate = 0
+ShowDayOfWeek = True

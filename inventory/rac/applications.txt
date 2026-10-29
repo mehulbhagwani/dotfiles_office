@@ -1,0 +1,36 @@
+# /Applications
+Adobe After Effects 2026
+Adobe Creative Cloud
+Adobe Media Encoder 2026
+Adobe Photoshop 2026
+Adobe Premiere Pro 2026
+Blip.app
+Brave Browser.app
+ChatGPT.app
+Ghostty.app
+HyperWhisper.app
+Keynote Creator Studio.app
+LocalSend 2.app
+LocalSend.app
+logioptionsplus.app
+MiniMax Design.app
+Nix Apps
+OrbStack.app
+Safari.app
+Spotify.app
+Synology Drive Client.app
+Tailscale.app
+Utilities
+Visual Studio Code.app
+Vorssaint.app
+WezTerm.app
+
+# ~/Applications
+Brave Browser Apps.localized
+Claude Code URL Handler.app
+Home Manager Apps
+PPC-NAS.app
+PPCSpeakerControl.app
+Premiere Pro Installer.app
+
+# ~/Applications/Home Manager Apps

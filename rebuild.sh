@@ -1,43 +1,15 @@
 #!/usr/bin/env bash
 # Apply this repo to the Mac you are on.
-# Usage: ./rebuild.sh [rac|mehul-mac]
+# Usage: ./rebuild.sh [host]   (hosts are listed in hosts.nix)
 set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 ln -sfn "$DIR" ~/.dotfiles
 
-pick_host() {
-  if [ -n "${1:-}" ]; then
-    printf '%s\n' "$1"
-    return
-  fi
-  local name user
-  user="$(whoami)"
-  name="$(scutil --get ComputerName 2>/dev/null || true)"
-  case "$user" in
-    rac) printf '%s\n' rac; return ;;
-    mehul) printf '%s\n' mehul-mac; return ;;
-  esac
-  case "$name" in
-    Mehul-Mac|Mehul*|mehul-mac) printf '%s\n' mehul-mac; return ;;
-    Rac*|rac) printf '%s\n' rac; return ;;
-  esac
-  echo "Could not tell which machine this is (user=$user computer=${name:-unknown})." >&2
-  echo "Run: ./rebuild.sh rac    or    ./rebuild.sh mehul-mac" >&2
-  exit 1
-}
-
-HOST="$(pick_host "${1:-}")"
-case "$HOST" in
-  rac|mehul-mac) ;;
-  *)
-    echo "Unknown host '$HOST'. Use rac or mehul-mac." >&2
-    exit 1
-    ;;
-esac
+HOST="$("$DIR/scripts/pick-host.sh" "${1:-}")"
 
 echo "==> applying darwinConfigurations.$HOST"
 # brew 7 will not load casks from an untrusted tap. Trust before the switch
-# so baby-menu is not skipped or pruned.
+# so pi-launcher is not skipped or pruned.
 if command -v brew >/dev/null 2>&1 && brew tap | grep -qx 'kunchenguid/tap'; then
   brew trust kunchenguid/tap || true
 fi

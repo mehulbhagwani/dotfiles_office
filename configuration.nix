@@ -1,4 +1,4 @@
-{ user, ... }:
+{ user, host, ... }:
 
 {
   # Determinate already manages the Nix daemon, so nix-darwin shouldn't.
@@ -83,6 +83,7 @@
       "obsidian"
       "visual-studio-code"
       "wezterm"
-    ];
+    ]
+    ++ ((import ./hosts.nix).${host}.extraCasks or [ ]);
   };
 }

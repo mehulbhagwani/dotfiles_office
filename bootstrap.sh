@@ -22,26 +22,7 @@ ln -sfn "$DIR" ~/.dotfiles
 
 echo "==> Step 3: pick this Mac"
 # Do this before any sudo call: sudo resets $USER to root.
-REAL_USER="$(whoami)"
-COMPUTER_NAME="$(scutil --get ComputerName 2>/dev/null || true)"
-if [ -n "${1:-}" ]; then
-  HOST="$1"
-elif [ "$REAL_USER" = "rac" ]; then
-  HOST="rac"
-elif [ "$REAL_USER" = "mehul" ] || [[ "$COMPUTER_NAME" == Mehul* ]]; then
-  HOST="mehul-mac"
-else
-  echo "    Could not tell which machine this is (user=$REAL_USER computer=${COMPUTER_NAME:-unknown})."
-  echo "    Run: ./bootstrap.sh rac    or    ./bootstrap.sh mehul-mac"
-  exit 1
-fi
-case "$HOST" in
-  rac|mehul-mac) ;;
-  *)
-    echo "    Unknown host '$HOST'. Use rac or mehul-mac."
-    exit 1
-    ;;
-esac
+HOST="$(NIX_BIN="$(command -v nix)" "$DIR/scripts/pick-host.sh" "${1:-}")"
 echo "    applying darwinConfigurations.$HOST (user from hosts.nix)"
 
 echo "==> Step 4: first darwin-rebuild switch (pinned to nix-darwin-26.05)"

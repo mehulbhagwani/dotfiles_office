@@ -1,0 +1,10 @@
+autohide = True
+largesize = 128.0
+lastShowIndicatorTime = 814868677.568654
+loc = 'en_US:IN'
+magnification = True
+mod-count = 557
+region = 'IN'
+tilesize = 56.0
+version = 1
+wvous-br-corner = 14

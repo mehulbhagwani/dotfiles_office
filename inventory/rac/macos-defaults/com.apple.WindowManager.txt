@@ -1,0 +1,6 @@
+AutoHide = True
+HasDisplayedShowDesktopEducation = True
+HideDesktop = True
+LastHeartbeatDateString.daily = '2026-10-29T08:29:51Z'
+StageManagerHideWidgets = False
+StandardHideWidgets = False

@@ -1,0 +1,9 @@
+brave-browser
+claude-code@latest
+codex
+ghostty
+hyperwhisper
+localsend
+orbstack
+visual-studio-code
+wezterm

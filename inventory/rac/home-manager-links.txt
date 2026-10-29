@@ -1,0 +1,21 @@
+~/.claude/CLAUDE.md
+~/.claude/settings.json
+~/.codex/AGENTS.md
+~/.config/fontconfig/conf.d/10-hm-fonts.conf
+~/.config/fontconfig/conf.d/52-hm-default-fonts.conf
+~/.config/herdr/config.toml
+~/.config/nvim
+~/.config/opencode/AGENTS.md
+~/.config/starship.toml
+~/.config/wezterm
+~/.local/state/.keep
+~/.pi/agent/extensions
+~/.pi/agent/keybindings.json
+~/.pi/agent/models.json
+~/.pi/agent/settings.json
+~/.pi/agent/themes
+~/.zshenv
+~/.zshrc
+~/Applications/Home Manager Apps
+~/dotfiles/result
+~/Library/Fonts/.home-manager-fonts-version

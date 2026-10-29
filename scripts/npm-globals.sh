@@ -31,6 +31,14 @@ PACKAGES=(
   openpanel-axi
   quota-axi
   tasks-axi
+  "@andershoffmann/obsidian-axi"
+  acpx
+  justroll
+  pi-acp
+  playwright
+  pnpm
+  screencast-axi
+  tsx
 )
 
 command -v npm >/dev/null 2>&1 || { echo "npm-globals: npm not found, skipping"; exit 0; }
