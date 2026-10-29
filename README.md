@@ -145,11 +145,7 @@ Pi is an opt-in CLI, not a dependency this repository vendors. Install it from i
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 ```
 
-[Pi Launcher](https://github.com/kunchenguid/homebrew-tap) is also optional and installed from its owner, not declared by this config:
-
-```sh
-brew install --cask kunchenguid/tap/pi-launcher
-```
+[Pi Launcher](https://github.com/kunchenguid/pi-launcher) is installed from its owner's Homebrew tap and declared in `configuration.nix`, so it is installed on every rebuild. It is an independent, unofficial launcher for Pi; see its README for details. Obsidian is also declared there as a Homebrew cask and installed on every rebuild.
 
 Home Manager owns exactly two repository-authored Pi directories: `~/.pi/agent/themes` and `~/.pi/agent/extensions`. It also links `models.json` and `settings.json` as individual files. The local extension directory is for public, repository-authored extensions only - third-party package code never belongs there. Run `/reload` after editing a local extension or other Pi resources. The terminal-title extension shows a spinner while Pi is working, then a completion mark with the session name or current directory. The `rose-pine-moon` theme was authored clean-room from the public [Rosé Pine Moon palette](https://rosepinetheme.com/palette) and Pi's [public theme schema](https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json), not from a private or live theme file.
 

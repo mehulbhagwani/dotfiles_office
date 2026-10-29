@@ -74,6 +74,7 @@
       }
     }
   },
+  "model": "opus",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark-daltonized",
   "agentPushNotifEnabled": true,
