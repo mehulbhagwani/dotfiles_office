@@ -27,4 +27,19 @@
     description = "Personal Mac (Computer Name Mehul-Mac)";
     extraCasks = [ ];
   };
+  mini-tech-s-mac-mini = {
+    user = "tech";
+    computerName = "Mini_Tech’s Mac mini";
+    description = "Tech Mac mini (replaces the office MacBook Pro)";
+    extraCasks = [
+      "adobe-creative-cloud"
+      "blip"
+      "chatgpt"
+      "logi-options+"
+      "spotify"
+      "synology-drive"
+      "tailscale-app"
+      "vorssaint"
+    ];
+  };
 }
